@@ -38,83 +38,83 @@ jobs:
       upload-sarif: false
 
   fmt:
-    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-fmt.yml@f762609c3cd6d1317867a7504445385910d6f16a # main
+    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-fmt.yml@main # NOSONAR: self-referential — pinning to a SHA creates a bootstrap cycle
     with:
       working-directory: examples/hello
 
   lint:
-    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-lint.yml@f762609c3cd6d1317867a7504445385910d6f16a # main
+    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-lint.yml@main # NOSONAR: self-referential — pinning to a SHA creates a bootstrap cycle
     with:
       working-directory: examples/hello
 
   test:
-    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-test.yml@f762609c3cd6d1317867a7504445385910d6f16a # main
+    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-test.yml@main # NOSONAR: self-referential — pinning to a SHA creates a bootstrap cycle
     with:
       working-directory: examples/hello
 
   build:
-    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-build.yml@f762609c3cd6d1317867a7504445385910d6f16a # main
+    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-build.yml@main # NOSONAR: self-referential — pinning to a SHA creates a bootstrap cycle
     with:
       working-directory: examples/hello
 
   docs:
-    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-docs.yml@f762609c3cd6d1317867a7504445385910d6f16a # main
+    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-docs.yml@main # NOSONAR: self-referential — pinning to a SHA creates a bootstrap cycle
     with:
       working-directory: examples/hello
 
   security:
-    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-security.yml@f762609c3cd6d1317867a7504445385910d6f16a # main
+    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-security.yml@main # NOSONAR: self-referential — pinning to a SHA creates a bootstrap cycle
     with:
       working-directory: examples/hello
 
   deny:
-    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-deny.yml@f762609c3cd6d1317867a7504445385910d6f16a # main
+    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-deny.yml@main # NOSONAR: self-referential — pinning to a SHA creates a bootstrap cycle
     with:
       working-directory: examples/hello
 
   coverage:
-    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-coverage.yml@f762609c3cd6d1317867a7504445385910d6f16a # main
+    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-coverage.yml@main # NOSONAR: self-referential — pinning to a SHA creates a bootstrap cycle
     with:
       working-directory: examples/hello
 
   bench:
-    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-bench.yml@f762609c3cd6d1317867a7504445385910d6f16a # main
+    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-bench.yml@main # NOSONAR: self-referential — pinning to a SHA creates a bootstrap cycle
     with:
       working-directory: examples/hello
 
   msrv:
-    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-msrv.yml@f762609c3cd6d1317867a7504445385910d6f16a # main
+    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-msrv.yml@main # NOSONAR: self-referential — pinning to a SHA creates a bootstrap cycle
     with:
       msrv: "1.88.0"
       working-directory: examples/hello
 
   miri:
-    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-miri.yml@f762609c3cd6d1317867a7504445385910d6f16a # main
+    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-miri.yml@main # NOSONAR: self-referential — pinning to a SHA creates a bootstrap cycle
     with:
       working-directory: examples/hello
       miri-args: --lib
 
   mutation:
-    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-mutation.yml@f762609c3cd6d1317867a7504445385910d6f16a # main
+    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-mutation.yml@main # NOSONAR: self-referential — pinning to a SHA creates a bootstrap cycle
     with:
       working-directory: examples/hello
       threshold: 50
 
   semgrep:
-    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-semgrep.yml@f762609c3cd6d1317867a7504445385910d6f16a # main
+    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-semgrep.yml@main # NOSONAR: self-referential — pinning to a SHA creates a bootstrap cycle
     with:
       working-directory: examples/hello
 
   sonar:
     if: vars.SONAR_ENABLED == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false)
-    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-sonar.yml@f762609c3cd6d1317867a7504445385910d6f16a # main
+    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-sonar.yml@main # NOSONAR: self-referential — pinning to a SHA creates a bootstrap cycle
     with:
       working-directory: examples/hello
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   container:
-    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-container.yml@f762609c3cd6d1317867a7504445385910d6f16a # main
+    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-container.yml@main # NOSONAR: self-referential — pinning to a SHA creates a bootstrap cycle
     with:
       image-name: hello-example
       context: examples/hello
