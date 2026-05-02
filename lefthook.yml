@@ -16,12 +16,16 @@ pre-commit:
       run: make fmt-check
     secret-scan:
       run: make secrets-scan-staged
+    actionlint:
+      run: actionlint
 
 pre-push:
   parallel: false
   commands:
     lint:
       run: make lint
+    actionlint:
+      run: actionlint
 
 commit-msg:
   commands:
