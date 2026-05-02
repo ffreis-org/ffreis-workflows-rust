@@ -33,15 +33,15 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # main
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9
+        uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9 # master
         with:
           toolchain: ${{ inputs.toolchain }}
 
       - name: Rust cache
-        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5
+        uses: Swatinem/rust-cache@23869a5bd66c73db3c0ac40331f3206eb23791dc # v2.9.1
         with:
           workspaces: "${{ inputs.working-directory }} -> target"
 
@@ -55,7 +55,7 @@ jobs:
 
       - name: Upload Criterion results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: criterion-results
           path: ${{ inputs.working-directory }}/target/criterion

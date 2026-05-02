@@ -1,7 +1,7 @@
 name: Rust Mutation Testing
 
 # Reusable workflow — callers invoke via:
-#   uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-mutation.yml@main
+#   uses: ./.github/workflows/rust-mutation.yml
 #
 # Intended schedule: weekly (Sunday 02:00 UTC) or workflow_dispatch.
 # Do NOT run on every PR — mutation testing is slow (15–90 min per repo).
@@ -63,7 +63,7 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Install Rust (${{ inputs.toolchain }})
         uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9
@@ -159,7 +159,7 @@ jobs:
       # Upload missed/timeout mutant lists to make actionable findings visible.
       - name: Upload mutants output
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: mutants-report
           path: ${{ inputs.working-directory }}/mutants.out/

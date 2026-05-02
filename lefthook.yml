@@ -16,6 +16,8 @@ pre-commit:
       run: make fmt-check
     secret-scan:
       run: make secrets-scan-staged
+    actionlint:
+      run: make lint
 
 pre-push:
   parallel: false

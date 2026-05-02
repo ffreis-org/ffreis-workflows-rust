@@ -26,93 +26,93 @@ permissions:
 
 jobs:
   workflows-policy:
-    uses: FelipeFuhr/ffreis-workflows-general/.github/workflows/general-workflows-policy.yml@6c9269aea4f05cdf73672f3da7ee3501b1285463 # v0.1.7
+    uses: FelipeFuhr/ffreis-workflows-general/.github/workflows/general-workflows-policy.yml@a02d736d25fa99fca8b4b623af9467d7afc472a4 # v1.0.3
 
   codeql-actions:
-    uses: FelipeFuhr/ffreis-workflows-general/.github/workflows/general-codeql.yml@6c9269aea4f05cdf73672f3da7ee3501b1285463 # v0.1.7
+    uses: FelipeFuhr/ffreis-workflows-general/.github/workflows/general-codeql.yml@a02d736d25fa99fca8b4b623af9467d7afc472a4 # v1.0.3
     with:
       languages: actions
       source-root: .
       upload-sarif: false
 
   fmt:
-    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-fmt.yml@main
+    uses: ./.github/workflows/rust-fmt.yml
     with:
       working-directory: examples/hello
 
   lint:
-    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-lint.yml@main
+    uses: ./.github/workflows/rust-lint.yml
     with:
       working-directory: examples/hello
 
   test:
-    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-test.yml@main
+    uses: ./.github/workflows/rust-test.yml
     with:
       working-directory: examples/hello
 
   build:
-    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-build.yml@main
+    uses: ./.github/workflows/rust-build.yml
     with:
       working-directory: examples/hello
 
   docs:
-    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-docs.yml@main
+    uses: ./.github/workflows/rust-docs.yml
     with:
       working-directory: examples/hello
 
   security:
-    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-security.yml@main
+    uses: ./.github/workflows/rust-security.yml
     with:
       working-directory: examples/hello
 
   deny:
-    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-deny.yml@main
+    uses: ./.github/workflows/rust-deny.yml
     with:
       working-directory: examples/hello
 
   coverage:
-    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-coverage.yml@main
+    uses: ./.github/workflows/rust-coverage.yml
     with:
       working-directory: examples/hello
 
   bench:
-    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-bench.yml@main
+    uses: ./.github/workflows/rust-bench.yml
     with:
       working-directory: examples/hello
 
   msrv:
-    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-msrv.yml@main
+    uses: ./.github/workflows/rust-msrv.yml
     with:
       msrv: "1.88.0"
       working-directory: examples/hello
 
   miri:
-    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-miri.yml@main
+    uses: ./.github/workflows/rust-miri.yml
     with:
       working-directory: examples/hello
       miri-args: --lib
 
   mutation:
-    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-mutation.yml@main
+    uses: ./.github/workflows/rust-mutation.yml
     with:
       working-directory: examples/hello
       threshold: 50
 
   semgrep:
-    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-semgrep.yml@main
+    uses: ./.github/workflows/rust-semgrep.yml
     with:
       working-directory: examples/hello
 
   sonar:
     if: vars.SONAR_ENABLED == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false)
-    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-sonar.yml@main
+    uses: ./.github/workflows/rust-sonar.yml
     with:
       working-directory: examples/hello
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   container:
-    uses: FelipeFuhr/ffreis-workflows-rust/.github/workflows/rust-container.yml@main
+    uses: ./.github/workflows/rust-container.yml
     with:
       image-name: hello-example
       context: examples/hello
