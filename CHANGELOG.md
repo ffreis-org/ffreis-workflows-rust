@@ -1,0 +1,37 @@
+# Changelog
+
+## 1.0.0 (2026-05-02)
+
+
+### Features
+
+* add first sonar scan ([d272eca](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/d272ecaf70d6cc813fec769f80d8110c3131eff5))
+* add first sonar scan ([e5542ed](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/e5542ede5551102af6bec1c1e13097642daa46b9))
+* ci improvements ([98d9ec8](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/98d9ec8dacc14662578832c7419ff49e224fa4f3))
+* improve ci ([2aff57a](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/2aff57aaf06b0e9d0855073c3759e52664999b44))
+* improvements based on usage ([31af9db](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/31af9dbc9492200d9c552ae80b998652b04bdada))
+* improvements based on usage ([32af969](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/32af969de0d9df15042b6f19b29a9ab0d4e1d49b))
+* more workflows ([bbce2ca](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/bbce2ca67ac304523f2a2b10f5d14ee98ed72b25))
+* more workflows ([20be8d5](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/20be8d55a6d3add600cd0aabef6cf3bcd2da51ff))
+* rust workflows ([8506783](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/8506783ac01483648db2cd1ff2622be7fa77926a))
+* setup repo ([39cf709](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/39cf709ea34339d490f567ec730ada4f842a4bb5))
+
+
+### Bug Fixes
+
+* actionlint + grype gating ([623b540](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/623b54040ffba0ed0e15d003ecb99a61ae59a6a0))
+* address PR review comments on dependabot and concurrency groups ([2d66a7a](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/2d66a7a1026662d008f1cb7f112c1f09e0cac760))
+* address PR review feedback ([33a9d12](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/33a9d126ccb22d5843046b728bec9ffeaeeed7e5))
+* address review feedback on dependabot, concurrency groups ([c60e3a4](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/c60e3a4175d60bfa1d6de1718a91fc95036d96a0))
+* address six code review issues from initial scaffolding PR ([43c5969](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/43c59696eda74362a0e4e98b268552a5ef72c26a))
+* ci ([f762609](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/f762609c3cd6d1317867a7504445385910d6f16a))
+* ci ([27f20b2](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/27f20b2217ce940ecfdd2bc9a4ff475e0f43ae0f))
+* ci ([aee4b39](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/aee4b398833ae09ec8e32221cd8c8e5bda1bb8c7))
+* ci ([8620739](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/8620739241c2d3e79b2cec564d9db59790bac1f9))
+* ci ([d734e05](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/d734e050a2e838dffc19c31d13882c3744b6c298))
+* ci ([#12](https://github.com/FelipeFuhr/ffreis-workflows-rust/issues/12)) ([98d5d13](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/98d5d139853a40c6ae4175ead25a5b09e4130104))
+* dependabot dedup, concurrency group correctness ([5b5e8eb](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/5b5e8ebb8127c6afe570ac2ace9d3d18037a1853))
+* fix ci ([91e5aea](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/91e5aea780aaafd1793415451448f748ebe08905))
+* fix ci ([de4c187](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/de4c18749a0d64dc50de0245ea2c56eb4f63058d))
+* merge with main ([4b7b053](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/4b7b05396140001b5dbad45b80d5848bc033b297))
+* remove duplicate dependabot/Renovate overlap and fix concurrency groups ([a38b297](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/a38b297790a4120e8b15bbd2ae0328da96373f34))
