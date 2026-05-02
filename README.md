@@ -3,13 +3,13 @@
 Reusable GitHub Actions workflows for Rust projects in the ffreis org.
 
 
-All workflows use `on: workflow_call:` and should be consumed from other repositories by pinning to a specific commit SHA for reproducibility and security. Example:
+All workflows use `on: workflow_call` and should be consumed from other repositories by pinning to a specific commit SHA for reproducibility and security. Example:
 
 ```yaml
-uses: ffreis/ffreis-platform-workflows-rust/.github/workflows/<file>.yml@<sha> # latest
+uses: ffreis/ffreis-platform-workflows-rust/.github/workflows/<file>.yml@<sha> # v1.x.y
 ```
 
-Replace `<sha>` with the latest commit SHA from the target workflow repository. Avoid using @main or @vX tags for production workflows.
+Replace `<sha>` with the commit SHA corresponding to the desired release tag. Avoid using `@main` or floating `@vX` tags for production workflows.
 
 ---
 
@@ -33,8 +33,6 @@ Replace `<sha>` with the latest commit SHA from the target workflow repository. 
 ---
 
 ## Caller examples
-on:
-jobs:
 
 ### Format check on every PR
 
@@ -42,13 +40,13 @@ jobs:
 # .github/workflows/ci.yml  (in consumer repo)
 name: CI
 
-
+on:
   pull_request:
     branches: [main]
 
----
+jobs:
   fmt:
-    uses: ffreis/ffreis-platform-workflows-rust/.github/workflows/rust-fmt.yml@<sha> # latest
+    uses: ffreis/ffreis-platform-workflows-rust/.github/workflows/rust-fmt.yml@<sha> # v1.x.y
     with:
       working-directory: app
 ```
@@ -57,7 +55,7 @@ name: CI
 
 ```yaml
   lint:
-    uses: ffreis/ffreis-platform-workflows-rust/.github/workflows/rust-lint.yml@<sha> # latest
+    uses: ffreis/ffreis-platform-workflows-rust/.github/workflows/rust-lint.yml@<sha> # v1.x.y
     with:
       working-directory: app
       clippy-args: "-- -D warnings"
@@ -67,7 +65,7 @@ name: CI
 
 ```yaml
   test:
-    uses: ffreis/ffreis-platform-workflows-rust/.github/workflows/rust-test.yml@<sha> # latest
+    uses: ffreis/ffreis-platform-workflows-rust/.github/workflows/rust-test.yml@<sha> # v1.x.y
     with:
       working-directory: app
       test-args: "--all-features"
@@ -78,7 +76,7 @@ name: CI
 
 ```yaml
   build:
-    uses: ffreis/ffreis-platform-workflows-rust/.github/workflows/rust-build.yml@<sha> # latest
+    uses: ffreis/ffreis-platform-workflows-rust/.github/workflows/rust-build.yml@<sha> # v1.x.y
     with:
       rust-versions: '["stable","1.88.0"]'
       os-list: '["ubuntu-latest","macos-latest"]'
@@ -89,7 +87,7 @@ name: CI
 
 ```yaml
   audit:
-    uses: ffreis/ffreis-platform-workflows-rust/.github/workflows/rust-security.yml@<sha> # latest
+    uses: ffreis/ffreis-platform-workflows-rust/.github/workflows/rust-security.yml@<sha> # v1.x.y
     with:
       working-directory: app
       ignore-advisories: "RUSTSEC-2024-0001"
@@ -99,7 +97,7 @@ name: CI
 
 ```yaml
   coverage:
-    uses: ffreis/ffreis-platform-workflows-rust/.github/workflows/rust-coverage.yml@<sha> # latest
+    uses: ffreis/ffreis-platform-workflows-rust/.github/workflows/rust-coverage.yml@<sha> # v1.x.y
     with:
       working-directory: app
       coverage-threshold: 80
@@ -112,7 +110,7 @@ name: CI
 
 ```yaml
   container:
-    uses: ffreis/ffreis-platform-workflows-rust/.github/workflows/rust-container.yml@<sha> # latest
+    uses: ffreis/ffreis-platform-workflows-rust/.github/workflows/rust-container.yml@<sha> # v1.x.y
     with:
       image-name: my-service:latest
       containerfile: Containerfile
@@ -123,7 +121,7 @@ name: CI
 
 ```yaml
   deny:
-    uses: ffreis/ffreis-platform-workflows-rust/.github/workflows/rust-deny.yml@<sha> # latest
+    uses: ffreis/ffreis-platform-workflows-rust/.github/workflows/rust-deny.yml@<sha> # v1.x.y
     with:
       working-directory: app
 ```
@@ -134,7 +132,7 @@ name: CI
 
 ```yaml
   docs:
-    uses: ffreis/ffreis-platform-workflows-rust/.github/workflows/rust-docs.yml@<sha> # latest
+    uses: ffreis/ffreis-platform-workflows-rust/.github/workflows/rust-docs.yml@<sha> # v1.x.y
     with:
       working-directory: app
 ```
@@ -143,7 +141,7 @@ name: CI
 
 ```yaml
   msrv:
-    uses: ffreis/ffreis-platform-workflows-rust/.github/workflows/rust-msrv.yml@<sha> # latest
+    uses: ffreis/ffreis-platform-workflows-rust/.github/workflows/rust-msrv.yml@<sha> # v1.x.y
     with:
       msrv: "1.80.0"
       working-directory: app
@@ -153,7 +151,7 @@ name: CI
 
 ```yaml
   bench:
-    uses: ffreis/ffreis-platform-workflows-rust/.github/workflows/rust-bench.yml@<sha> # latest
+    uses: ffreis/ffreis-platform-workflows-rust/.github/workflows/rust-bench.yml@<sha> # v1.x.y
     with:
       working-directory: app
       timeout-minutes: 90
@@ -163,7 +161,7 @@ name: CI
 
 ```yaml
   miri:
-    uses: ffreis/ffreis-platform-workflows-rust/.github/workflows/rust-miri.yml@<sha> # latest
+    uses: ffreis/ffreis-platform-workflows-rust/.github/workflows/rust-miri.yml@<sha> # v1.x.y
     with:
       working-directory: app
       timeout-minutes: 60

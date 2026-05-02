@@ -8,8 +8,6 @@ permissions:
   contents: read
   actions: read
   security-events: write
-  issues: write
-  pull-requests: write
 
 # Validates that every workflow defined in this library functions correctly
 # against the minimal example app in examples/hello/.

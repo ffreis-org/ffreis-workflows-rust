@@ -17,15 +17,13 @@ pre-commit:
     secret-scan:
       run: make secrets-scan-staged
     actionlint:
-      run: actionlint
+      run: make lint
 
 pre-push:
   parallel: false
   commands:
     lint:
       run: make lint
-    actionlint:
-      run: actionlint
 
 commit-msg:
   commands:
