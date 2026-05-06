@@ -17,5 +17,3 @@ pre-push:
   commands:
     lint:
       run: make lint
-    actionlint:
-      run: actionlint

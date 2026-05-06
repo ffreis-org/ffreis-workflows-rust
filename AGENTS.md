@@ -40,7 +40,7 @@ renovate.json     ← auto-updates action SHAs
 ## Build/test
 
 ```bash
-make setup              # lefthook + gitleaks + clippy check
+make setup              # install git hooks and verify gitleaks is installed
 make fmt-check          # rustfmt check
 make lint               # actionlint + clippy examples
 make secrets-scan-staged
