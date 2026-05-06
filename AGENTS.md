@@ -1,131 +1,58 @@
-# ffreis-workflows-rust — contribution guide
+# Agent Context
 
-This repository is a library of reusable GitHub Actions workflows for Rust projects.
-The `examples/hello/` directory is the canonical test subject used by `self-test.yml`.
+**This repo:** `ffreis-workflows-rust` — reusable GitHub Actions workflow library for
+Rust projects. Covers fmt, clippy, test, matrix builds, cargo-audit, coverage,
+container build, cargo-deny, docs, MSRV check, benchmarks, and Miri.
 
----
+## Non-obvious rules (read before changing anything)
 
-## Rules for adding or modifying workflows
+1. **ALL `rust-*.yml` workflows must appear in `self-test.yml`.** No exemptions.
 
-### 1. Every new workflow must be in `self-test.yml`
+2. **Miri special case:** Call Miri with `miri-args: --lib` in `self-test.yml` to avoid
+   compiling Criterion benchmarks (FFI/unsafe, incompatible with Miri). Do not remove.
 
-Every file added to `.github/workflows/` (except `self-test.yml` itself) **must** have a
-corresponding job in `self-test.yml` that calls it against `examples/hello/`.
+3. **`cargo-deny` requires `deny.toml`** at the calling repo's workspace root.
+   Callers without it will fail at runtime. Do not make it optional silently.
 
-A workflow that is not exercised by `self-test.yml` is unverified. It will not be merged.
+4. **MSRV input is required** — always a concrete version (e.g., `1.80.0`), not `stable`.
 
-**There are no exceptions in this repo.** All workflows here operate on source code and
-do not require live external infrastructure.
+5. **Coverage threshold** (`coverage-threshold`, default 80) is per-workflow input.
+   Callers override per their own standard.
 
-**Handling required secrets** — if a workflow requires a secret (e.g. `SONAR_TOKEN`,
-`CODECOV_TOKEN`), declare it as `required: true` in the workflow. In `self-test.yml`, gate
-the entire job so it is explicitly skipped on fork PRs (where secrets are unavailable):
+6. **`dtolnay/rust-toolchain` pinned to full SHA.** Renovate manages this.
 
-```yaml
-sonar:
-  if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false
-  uses: ./.github/workflows/rust-sonar.yml
-  with:
-    working-directory: examples/hello
-  secrets:
-    SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+7. **Concurrency is caller-controlled.** Never add `concurrency:` to reusable workflows.
+
+8. **Container build in `self-test.yml`:** pass `push: false` or omit registry inputs —
+   no registry credentials required in this repo.
+
+## Structure
+
+```
+.github/workflows/
+  rust-*.yml      ← reusable library
+  devops-*.yml    ← repo-maintenance
+  ci.yml
+examples/hello/   ← minimal Rust project + Cargo.toml
+renovate.json     ← auto-updates action SHAs
 ```
 
-This produces an explicit "Skipped" status on fork PRs rather than a silent success.
+## Build/test
 
----
-
-### 2. No silent failures
-
-A step that fails silently is worse than one that fails loudly.
-
-- If a required tool is missing → `exit 1` with a clear install message pointing to docs.
-- If a required secret is absent and the workflow cannot meaningfully skip → fail the job.
-- Never print a warning and continue when the operation did not run.
-
-`make secrets-scan-staged` and `make setup` in the `Makefile` are the reference
-implementation of the correct error pattern.
-
----
-
-### 3. No shell injection — inputs go through `env:`
-
-Never interpolate `${{ inputs.* }}`, `${{ github.* }}`, or any expression directly inside a
-`run:` step. Always route through an `env:` variable. Semgrep runs in CI and will block PRs
-that violate this rule (`run-shell-injection`).
-
-```yaml
-# BAD — Semgrep blocks this
-run: cargo test "${{ inputs.test-filter }}"
-
-# GOOD
-env:
-  TEST_FILTER: ${{ inputs.test-filter }}
-run: cargo test "$TEST_FILTER"
+```bash
+make setup              # install git hooks and verify gitleaks is installed
+make fmt-check          # rustfmt check
+make lint               # actionlint + clippy examples
+make secrets-scan-staged
 ```
 
----
+## Cross-repo role
 
-### 4. Least-privilege secrets — never `secrets: inherit`
+Consumed by `website/ffreis-website-lambdas-rust` (pinned SHA). Breaking changes
+to the SHA require callers to update their pin via Renovate.
 
-Pass only the secrets a workflow explicitly declares, both in `self-test.yml` and in any
-downstream consumer:
+## Keeping this file current
 
-```yaml
-# BAD
-uses: ./.github/workflows/rust-sonar.yml
-secrets: inherit
-
-# GOOD
-uses: ./.github/workflows/rust-sonar.yml
-secrets:
-  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-```
-
----
-
-### 5. `secrets.*` is forbidden in `if:` conditions
-
-GitHub Actions forbids `secrets.*` in `if:` expressions within `workflow_call` reusable
-workflows. Use job-level `if:` gating in `self-test.yml` instead (see the pattern in rule 1).
-
----
-
-### 6. Pin third-party actions to a full commit SHA
-
-```yaml
-# BAD
-uses: actions/checkout@v4
-
-# GOOD
-uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
-```
-
-When Semgrep flags a SHA as a false-positive secret, suppress it inline:
-
-```yaml
-uses: SonarSource/sonarqube-scan-action@<sha> # nosemgrep: generic.secrets.security.detected-sonarqube-docs-api-key.detected-sonarqube-docs-api-key
-```
-
----
-
-### Notes on specific workflows
-
-- **`rust-miri.yml`** — call with `miri-args: --lib` in `self-test.yml` to avoid compiling
-  the Criterion benchmark harness under Miri (Criterion uses FFI/unsafe features incompatible
-  with the Miri interpreter).
-- **`rust-container.yml`** — does not require a registry push in self-test; pass `push: false`
-  or omit the registry inputs.
-
----
-
-## Makefile targets
-
-| Target | Purpose |
-|---|---|
-| `make setup` | Bootstrap lefthook + verify all required dev tools are installed |
-| `make lint` | Validate workflow YAML + clippy on `examples/hello` |
-| `make fmt-check` | Check Rust formatting |
-| `make check` | Run all local checks (lint) |
-| `make secrets-scan-staged` | Scan staged files with gitleaks (fails if gitleaks not installed) |
-| `make hooks` | Install git hooks via lefthook |
+- **If you discover a fact not reflected here:** add it before finishing your task.
+- **If something here is wrong or outdated:** correct it in the same commit as the code change.
+- **If you rename a file, command, or concept referenced here:** update the reference.

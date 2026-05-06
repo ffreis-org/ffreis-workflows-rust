@@ -33,10 +33,10 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
 
     steps:
-      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # main
+      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v4
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9 # master
+        uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
         with:
           toolchain: ${{ inputs.toolchain }}
 
