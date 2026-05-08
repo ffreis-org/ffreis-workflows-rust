@@ -30,11 +30,9 @@ concurrency:
 
 jobs:
   workflows-policy:
-    timeout-minutes: 30
     uses: FelipeFuhr/ffreis-workflows-general/.github/workflows/general-workflows-policy.yml@01e2b12e992621fecf074b8a202f66044196f3bf # v1.0.4
 
   codeql-actions:
-    timeout-minutes: 30
     uses: FelipeFuhr/ffreis-workflows-general/.github/workflows/general-codeql.yml@01e2b12e992621fecf074b8a202f66044196f3bf # v1.0.4
     with:
       languages: actions
@@ -42,88 +40,74 @@ jobs:
       upload-sarif: false
 
   fmt:
-    timeout-minutes: 30
     uses: ./.github/workflows/rust-fmt.yml
     with:
       working-directory: examples/hello
 
   lint:
-    timeout-minutes: 30
     uses: ./.github/workflows/rust-lint.yml
     with:
       working-directory: examples/hello
 
   test:
-    timeout-minutes: 30
     uses: ./.github/workflows/rust-test.yml
     with:
       working-directory: examples/hello
 
   build:
-    timeout-minutes: 30
     uses: ./.github/workflows/rust-build.yml
     with:
       working-directory: examples/hello
 
   docs:
-    timeout-minutes: 30
     uses: ./.github/workflows/rust-docs.yml
     with:
       working-directory: examples/hello
 
   security:
-    timeout-minutes: 30
     uses: ./.github/workflows/rust-security.yml
     with:
       working-directory: examples/hello
 
   deny:
-    timeout-minutes: 30
     uses: ./.github/workflows/rust-deny.yml
     with:
       working-directory: examples/hello
 
   coverage:
-    timeout-minutes: 30
     uses: ./.github/workflows/rust-coverage.yml
     with:
       working-directory: examples/hello
 
   bench:
-    timeout-minutes: 30
     uses: ./.github/workflows/rust-bench.yml
     with:
       working-directory: examples/hello
 
   msrv:
-    timeout-minutes: 30
     uses: ./.github/workflows/rust-msrv.yml
     with:
       msrv: "1.88.0"
       working-directory: examples/hello
 
   miri:
-    timeout-minutes: 30
     uses: ./.github/workflows/rust-miri.yml
     with:
       working-directory: examples/hello
       miri-args: --lib
 
   mutation:
-    timeout-minutes: 30
     uses: ./.github/workflows/rust-mutation.yml
     with:
       working-directory: examples/hello
       threshold: 50
 
   semgrep:
-    timeout-minutes: 30
     uses: ./.github/workflows/rust-semgrep.yml
     with:
       working-directory: examples/hello
 
   sonar:
-    timeout-minutes: 30
     if: vars.SONAR_ENABLED == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false)
     uses: ./.github/workflows/rust-sonar.yml
     with:
@@ -132,7 +116,6 @@ jobs:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   container:
-    timeout-minutes: 30
     uses: ./.github/workflows/rust-container.yml
     with:
       image-name: hello-example
