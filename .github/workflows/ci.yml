@@ -24,6 +24,10 @@ permissions:
 # rust-miri uses --lib to avoid compiling the Criterion benchmark harness
 # under Miri (Criterion uses features incompatible with the Miri interpreter).
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   workflows-policy:
     uses: FelipeFuhr/ffreis-workflows-general/.github/workflows/general-workflows-policy.yml@01e2b12e992621fecf074b8a202f66044196f3bf # v1.0.4
