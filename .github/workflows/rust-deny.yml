@@ -22,6 +22,7 @@ permissions:
 
 jobs:
   deny:
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     defaults:
       run:
