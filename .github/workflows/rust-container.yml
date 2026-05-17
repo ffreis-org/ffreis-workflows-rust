@@ -25,6 +25,7 @@ permissions:
 
 jobs:
   container:
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     defaults:
       run:

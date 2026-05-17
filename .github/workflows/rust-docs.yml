@@ -21,6 +21,7 @@ permissions:
 
 jobs:
   docs:
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     defaults:
       run:
