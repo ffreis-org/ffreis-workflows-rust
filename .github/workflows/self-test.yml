@@ -78,6 +78,12 @@ jobs:
     uses: ./.github/workflows/rust-coverage.yml
     with:
       working-directory: examples/hello
+      # examples/hello is a 187-LOC validator with comprehensive tests;
+      # it should comfortably exceed 80. Gating here exercises the
+      # coverage-threshold input itself so a regression in that input
+      # would break self-test instead of silently shipping to downstream
+      # callers.
+      coverage-threshold: 80
 
   bench:
     uses: ./.github/workflows/rust-bench.yml
@@ -100,7 +106,10 @@ jobs:
     uses: ./.github/workflows/rust-mutation.yml
     with:
       working-directory: examples/hello
-      threshold: 50
+      # examples/hello is small enough that mutation should easily exceed
+      # 80; the previous 50 was too permissive to detect regressions in
+      # the mutation gating logic itself.
+      threshold: 80
 
   semgrep:
     uses: ./.github/workflows/rust-semgrep.yml
