@@ -111,6 +111,17 @@ jobs:
       # the mutation gating logic itself.
       threshold: 80
 
+  proptest:
+    uses: ./.github/workflows/rust-proptest.yml
+    with:
+      working-directory: examples/hello
+      # Low case count for the self-test (examples/hello has no real
+      # property tests yet — the workflow emits a warning + skips if it
+      # finds no proptest! macros, so this is mostly testing the workflow
+      # plumbing itself).
+      proptest-cases: 256
+      timeout-minutes: 10
+
   semgrep:
     uses: ./.github/workflows/rust-semgrep.yml
     with:

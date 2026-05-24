@@ -1,0 +1,97 @@
+name: Rust Proptest
+
+# Reusable workflow for property-based tests written with the `proptest`
+# crate. Runs them with a higher case count than `cargo test` defaults to,
+# under a longer timeout, so flaky shrinks have room to surface.
+#
+# Use this in addition to `rust-test.yml` (not instead of) — the regular
+# test job stays fast, this job hunts for shrinking failures.
+
+on:
+  workflow_call:
+    inputs:
+      toolchain:
+        description: "Rust toolchain to use"
+        type: string
+        default: "stable"
+      working-directory:
+        description: "Directory containing the Cargo workspace"
+        type: string
+        default: "."
+      test-args:
+        description: "Extra arguments passed to cargo test (e.g. -p crate)"
+        type: string
+        default: "--all-features"
+      proptest-cases:
+        description: "PROPTEST_CASES env var (number of generated cases per property)"
+        type: number
+        default: 1024
+      proptest-max-shrink-iters:
+        description: "PROPTEST_MAX_SHRINK_ITERS env var (cap on shrink steps to keep CI bounded)"
+        type: number
+        default: 10000
+      timeout-minutes:
+        description: "Job timeout in minutes"
+        type: number
+        default: 30
+
+permissions:
+  contents: read
+
+jobs:
+  proptest:
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+    env:
+      # Raise default cases — local `cargo test` uses 256 cases which often
+      # misses edge inputs that only show with the long tail.
+      PROPTEST_CASES: ${{ inputs.proptest-cases }}
+      PROPTEST_MAX_SHRINK_ITERS: ${{ inputs.proptest-max-shrink-iters }}
+
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@a5ad31d6a139d249332a2605b85202e8c0b78450 # v2.19.1
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
+        with:
+          toolchain: ${{ inputs.toolchain }}
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@23869a5bd66c73db3c0ac40331f3206eb23791dc # v2.9.1
+        with:
+          workspaces: "${{ inputs.working-directory }} -> target"
+
+      - name: Detect proptest usage (skip with warning if none)
+        id: detect
+        run: |
+          if ! grep -rE 'proptest!\s*\{|use proptest' --include='*.rs' . >/dev/null 2>&1; then
+            echo "::warning::No proptest! macros or `use proptest` found in this workspace; nothing to run."
+            echo "has_proptest=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_proptest=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run proptest tests
+        if: steps.detect.outputs.has_proptest == 'true'
+        env:
+          TEST_ARGS: ${{ inputs.test-args }}
+        run: |
+          set -euo pipefail
+          read -r -a test_args_arr <<< "${TEST_ARGS:-}"
+          # Filter by "proptest" in test name; this picks up the common
+          # convention of naming property tests `proptest_*` or `prop_*`.
+          # Falls back to running all tests if no name-filter convention exists.
+          if cargo test "${test_args_arr[@]}" -- --list 2>/dev/null | grep -qE 'proptest|prop_'; then
+            cargo test "${test_args_arr[@]}" -- proptest prop_
+          else
+            cargo test "${test_args_arr[@]}"
+          fi
