@@ -12,12 +12,11 @@ on:
         type: string
         default: "."
 
-permissions:
-  contents: read
-
 jobs:
   fmt:
     timeout-minutes: 15
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     defaults:
       run:

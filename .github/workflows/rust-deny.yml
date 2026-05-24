@@ -17,12 +17,11 @@ on:
         type: string
         default: "advisories bans licenses sources"
 
-permissions:
-  contents: read
-
 jobs:
   deny:
     timeout-minutes: 15
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     defaults:
       run:

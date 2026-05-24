@@ -20,12 +20,11 @@ on:
         type: string
         default: "--release"
 
-permissions:
-  contents: read
-
 jobs:
   build:
     timeout-minutes: 30
+    permissions:
+      contents: read
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
