@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.0](https://github.com/FelipeFuhr/ffreis-workflows-rust/compare/v1.0.0...v1.1.0) (2026-05-24)
+
+
+### Features
+
+* add rust-proptest reusable workflow + wire into self-test ([#20](https://github.com/FelipeFuhr/ffreis-workflows-rust/issues/20)) ([20b3c82](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/20b3c826c18c32b5e64573a0dcef656e679d8d62))
+* migrate to platform standards ([#16](https://github.com/FelipeFuhr/ffreis-workflows-rust/issues/16)) ([0a0d885](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/0a0d885285ab8cff96c67bce86f7e7970f3bc224))
+
 ## 1.0.0 (2026-05-06)
 
 
