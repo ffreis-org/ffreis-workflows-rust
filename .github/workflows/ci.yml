@@ -4,11 +4,6 @@ on:
   pull_request:
     branches: [main]
 
-permissions:
-  contents: read
-  actions: read
-  security-events: write
-
 # Validates that every workflow defined in this library functions correctly
 # against the minimal example app in examples/hello/.
 #
@@ -30,9 +25,15 @@ concurrency:
 
 jobs:
   workflows-policy:
+    permissions:
+      contents: read
     uses: FelipeFuhr/ffreis-workflows-general/.github/workflows/general-workflows-policy.yml@01e2b12e992621fecf074b8a202f66044196f3bf # v1.0.4
 
   codeql-actions:
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
     uses: FelipeFuhr/ffreis-workflows-general/.github/workflows/general-codeql.yml@d9792d01b442d7f2d3d2c6855cb312d885594e0f # v1.2.1
     with:
       languages: actions
@@ -40,60 +41,82 @@ jobs:
       upload-sarif: false
 
   fmt:
+    permissions:
+      contents: read
     uses: ./.github/workflows/rust-fmt.yml
     with:
       working-directory: examples/hello
 
   lint:
+    permissions:
+      contents: read
     uses: ./.github/workflows/rust-lint.yml
     with:
       working-directory: examples/hello
 
   test:
     if: ${{ !github.event.pull_request.draft }}
+    permissions:
+      contents: read
     uses: ./.github/workflows/rust-test.yml
     with:
       working-directory: examples/hello
 
   build:
+    permissions:
+      contents: read
     uses: ./.github/workflows/rust-build.yml
     with:
       working-directory: examples/hello
 
   docs:
+    permissions:
+      contents: read
     uses: ./.github/workflows/rust-docs.yml
     with:
       working-directory: examples/hello
 
   security:
+    permissions:
+      contents: read
     uses: ./.github/workflows/rust-security.yml
     with:
       working-directory: examples/hello
 
   deny:
+    permissions:
+      contents: read
     uses: ./.github/workflows/rust-deny.yml
     with:
       working-directory: examples/hello
 
   coverage:
     if: ${{ !github.event.pull_request.draft }}
+    permissions:
+      contents: read
     uses: ./.github/workflows/rust-coverage.yml
     with:
       working-directory: examples/hello
 
   bench:
     if: ${{ !github.event.pull_request.draft }}
+    permissions:
+      contents: read
     uses: ./.github/workflows/rust-bench.yml
     with:
       working-directory: examples/hello
 
   msrv:
+    permissions:
+      contents: read
     uses: ./.github/workflows/rust-msrv.yml
     with:
       msrv: "1.88.0"
       working-directory: examples/hello
 
   miri:
+    permissions:
+      contents: read
     uses: ./.github/workflows/rust-miri.yml
     with:
       working-directory: examples/hello
@@ -101,18 +124,24 @@ jobs:
 
   mutation:
     if: ${{ !github.event.pull_request.draft }}
+    permissions:
+      contents: read
     uses: ./.github/workflows/rust-mutation.yml
     with:
       working-directory: examples/hello
       threshold: 50
 
   semgrep:
+    permissions:
+      contents: read
     uses: ./.github/workflows/rust-semgrep.yml
     with:
       working-directory: examples/hello
 
   sonar:
     if: vars.SONAR_ENABLED == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false)
+    permissions:
+      contents: read
     uses: ./.github/workflows/rust-sonar.yml
     with:
       working-directory: examples/hello
@@ -120,6 +149,8 @@ jobs:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   container:
+    permissions:
+      contents: read
     uses: ./.github/workflows/rust-container.yml
     with:
       image-name: hello-example

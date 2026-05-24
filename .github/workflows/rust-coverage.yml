@@ -27,12 +27,11 @@ on:
       CODECOV_TOKEN:
         required: false
 
-permissions:
-  contents: read
-
 jobs:
   coverage:
     timeout-minutes: 30
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     defaults:
       run:
