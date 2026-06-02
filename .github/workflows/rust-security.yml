@@ -15,9 +15,15 @@ on:
         description: "Space-separated RUSTSEC IDs to ignore (e.g. 'RUSTSEC-2024-0001 RUSTSEC-2024-0002')"
         type: string
         default: ""
+      run_on_draft:
+        description: "Run even on draft PRs (default: skip on draft to save CI minutes)"
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   audit:
+    if: ${{ inputs.run_on_draft || vars.CI_RUN_ON_DRAFT == 'true' || github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     timeout-minutes: 30
     permissions:
       contents: read
