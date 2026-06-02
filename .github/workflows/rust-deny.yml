@@ -16,9 +16,15 @@ on:
         description: "Space-separated list of cargo-deny checks to run"
         type: string
         default: "advisories bans licenses sources"
+      run_on_draft:
+        description: "Run even on draft PRs (default: skip on draft to save CI minutes)"
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   deny:
+    if: ${{ inputs.run_on_draft || vars.CI_RUN_ON_DRAFT == 'true' || github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     timeout-minutes: 15
     permissions:
       contents: read
