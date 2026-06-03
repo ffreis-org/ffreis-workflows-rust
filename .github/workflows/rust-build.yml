@@ -10,7 +10,7 @@ on:
       os-list:
         description: "JSON array of runner OS labels to build on"
         type: string
-        default: '["ubuntu-latest","macos-latest"]'
+        default: '["ubuntu-latest"]'
       working-directory:
         description: "Directory containing the Cargo workspace"
         type: string
