@@ -19,12 +19,31 @@ on:
         description: "Extra arguments passed to cargo build"
         type: string
         default: "--release"
+      sccache:
+        description: "Enable sccache compiler caching (S3 backend)"
+        type: boolean
+        default: false
+      sccache-bucket:
+        description: "S3 bucket name for the sccache backend"
+        type: string
+        default: ""
+      sccache-region:
+        description: "AWS region of the sccache bucket"
+        type: string
+        default: "us-east-1"
+      sccache-role-arn:
+        description: "IAM role ARN assumed via OIDC for sccache S3 access"
+        type: string
+        default: ""
 
 jobs:
   build:
     timeout-minutes: 30
     permissions:
       contents: read
+      # Only used when `sccache` + `sccache-role-arn` are set, to mint an
+      # OIDC token for the S3 cache backend. No-op otherwise.
+      id-token: write
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -50,6 +69,31 @@ jobs:
         with:
           workspaces: "${{ inputs.working-directory }} -> target"
 
+      - name: Configure AWS credentials for sccache
+        if: ${{ inputs.sccache && inputs.sccache-role-arn != '' }}
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
+        with:
+          role-to-assume: ${{ inputs.sccache-role-arn }}
+          aws-region: ${{ inputs.sccache-region }}
+
+      - name: Set up sccache
+        if: ${{ inputs.sccache }}
+        uses: mozilla-actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10
+
+      - name: Enable sccache
+        if: ${{ inputs.sccache }}
+        env:
+          SCCACHE_BUCKET: ${{ inputs.sccache-bucket }}
+          SCCACHE_REGION: ${{ inputs.sccache-region }}
+        run: |
+          set -euo pipefail
+          {
+            echo "RUSTC_WRAPPER=sccache"
+            echo "CARGO_INCREMENTAL=0"
+            echo "SCCACHE_BUCKET=${SCCACHE_BUCKET}"
+            echo "SCCACHE_REGION=${SCCACHE_REGION}"
+          } >> "$GITHUB_ENV"
+
       - name: Build
         env:
           BUILD_ARGS: ${{ inputs.build-args }}
@@ -57,3 +101,7 @@ jobs:
           set -euo pipefail
           read -r -a build_args_arr <<< "${BUILD_ARGS:-}"
           cargo build "${build_args_arr[@]}"
+
+      - name: sccache stats
+        if: ${{ inputs.sccache }}
+        run: sccache --show-stats

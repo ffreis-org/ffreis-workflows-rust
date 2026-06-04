@@ -8,6 +8,26 @@ container build, cargo-deny, docs, MSRV check, benchmarks, and Miri.
 
 1. **ALL `rust-*.yml` workflows must appear in `self-test.yml`.** No exemptions.
 
+   1a. **`rust-affected.yml`** computes which workspace crates a change touches and
+   emits `cargo-args` (`--workspace` or `-p a -p b ...`) for downstream jobs to feed
+   into their `*-args` inputs. It walks the **intra-workspace reverse-dependency
+   graph** from `cargo metadata`, so editing a shared crate expands to every
+   dependent (no false skips). It is over-approximating by design and falls back to
+   `--workspace` on any uncertainty (unknown base commit, root manifest/lockfile
+   change). Callers gate compile jobs on its `changed` output.
+
+   1b. **sccache (S3 backend) is opt-in** on `rust-build/test/lint/coverage/docs`
+   via the `sccache`, `sccache-bucket`, `sccache-region`, `sccache-role-arn`
+   inputs. Default off → behaviour unchanged. When on with a role ARN, the job
+   assumes that role via OIDC; that is why those five jobs carry
+   `id-token: write` (a no-op unless sccache+role are set). `CARGO_INCREMENTAL=0`
+   is forced under sccache (required — incremental + wrapper are incompatible).
+
+   1c. **nextest is opt-in** on `rust-test.yml` (`nextest: true`). It runs
+   `cargo nextest run` + a separate `cargo test --doc` (nextest skips doctests).
+   Opt-in because nextest's post-`--` arg semantics differ from `cargo test`, so a
+   hard swap would break callers passing `cargo test`-specific `test-args`.
+
 2. **Miri special case:** Call Miri with `miri-args: --lib` in `self-test.yml` to avoid
    compiling Criterion benchmarks (FFI/unsafe, incompatible with Miri). Do not remove.
 

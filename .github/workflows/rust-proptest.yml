@@ -73,7 +73,7 @@ jobs:
         id: detect
         run: |
           if ! grep -rE 'proptest!\s*\{|use proptest' --include='*.rs' . >/dev/null 2>&1; then
-            echo "::warning::No proptest! macros or `use proptest` found in this workspace; nothing to run."
+            echo "::warning::No proptest! macros or 'use proptest' found in this workspace; nothing to run."
             echo "has_proptest=false" >> "$GITHUB_OUTPUT"
           else
             echo "has_proptest=true" >> "$GITHUB_OUTPUT"

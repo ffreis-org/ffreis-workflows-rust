@@ -54,12 +54,22 @@ jobs:
     with:
       working-directory: examples/hello
 
+  affected:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/rust-affected.yml
+    with:
+      working-directory: examples/hello
+
   test:
     permissions:
       contents: read
     uses: ./.github/workflows/rust-test.yml
     with:
       working-directory: examples/hello
+      # Exercise the nextest path (incl. the separate doctest run) so a
+      # regression in that branch breaks self-test, not a downstream caller.
+      nextest: true
 
   build:
     permissions:
