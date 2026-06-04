@@ -75,6 +75,7 @@ jobs:
         env:
           SCCACHE_BUCKET: ${{ inputs.sccache-bucket }}
           SCCACHE_REGION: ${{ inputs.sccache-region }}
+          SCCACHE_S3_KEY_PREFIX: ${{ github.repository }}
         run: |
           set -euo pipefail
           {
@@ -82,6 +83,7 @@ jobs:
             echo "CARGO_INCREMENTAL=0"
             echo "SCCACHE_BUCKET=${SCCACHE_BUCKET}"
             echo "SCCACHE_REGION=${SCCACHE_REGION}"
+            echo "SCCACHE_S3_KEY_PREFIX=${SCCACHE_S3_KEY_PREFIX}"
           } >> "$GITHUB_ENV"
 
       - name: Build documentation

@@ -62,7 +62,6 @@ jobs:
           WORKDIR: ${{ inputs.working-directory }}
           EVENT_NAME: ${{ github.event_name }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          PUSH_BEFORE: ${{ github.event.before }}
         run: |
           set -euo pipefail
 
@@ -75,12 +74,20 @@ jobs:
             echo "::notice::affected cargo-args=$1 changed=$2 crates=[$3]"
           }
 
+          # Push events (typically main) build everything. Downstream jobs may
+          # upload artifacts with a delete-sync (e.g. lambdas-packer), where a
+          # partial build would drop unchanged outputs. The selective-build
+          # savings are intentionally a PR-only optimisation — PRs are most runs.
+          if [[ "$EVENT_NAME" == "push" ]]; then
+            echo "::notice::push event; building everything for upload completeness"
+            emit "--workspace" "true" ""
+            exit 0
+          fi
+
           # --- Resolve the base commit to diff against -------------------------
           base=""
           if [[ "$EVENT_NAME" == "pull_request" ]]; then
             base="$PR_BASE_SHA"
-          elif [[ "$EVENT_NAME" == "push" ]]; then
-            base="$PUSH_BEFORE"
           fi
           # New branch / first push reports an all-zero SHA; treat as unknown.
           if [[ -z "$base" || "$base" =~ ^0+$ ]] || ! git cat-file -e "$base^{commit}" 2>/dev/null; then

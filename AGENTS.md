@@ -14,7 +14,10 @@ container build, cargo-deny, docs, MSRV check, benchmarks, and Miri.
    graph** from `cargo metadata`, so editing a shared crate expands to every
    dependent (no false skips). It is over-approximating by design and falls back to
    `--workspace` on any uncertainty (unknown base commit, root manifest/lockfile
-   change). Callers gate compile jobs on its `changed` output.
+   change). **Push events always return `--workspace`** so a downstream
+   delete-sync upload (e.g. lambdas-packer on main) never drops unchanged
+   artifacts — selective build is a PR-only optimisation. Callers gate compile
+   jobs on its `changed` output.
 
    1b. **sccache (S3 backend) is opt-in** on `rust-build/test/lint/coverage/docs`
    via the `sccache`, `sccache-bucket`, `sccache-region`, `sccache-role-arn`
@@ -22,6 +25,9 @@ container build, cargo-deny, docs, MSRV check, benchmarks, and Miri.
    assumes that role via OIDC; that is why those five jobs carry
    `id-token: write` (a no-op unless sccache+role are set). `CARGO_INCREMENTAL=0`
    is forced under sccache (required — incremental + wrapper are incompatible).
+   `SCCACHE_S3_KEY_PREFIX` is set to the caller repo (`github.repository`) so
+   each repo's cache is isolated (bounds PR cache-poisoning across same-owner
+   repos sharing one bucket).
 
    1c. **nextest is opt-in** on `rust-test.yml` (`nextest: true`). It runs
    `cargo nextest run` + a separate `cargo test --doc` (nextest skips doctests).
