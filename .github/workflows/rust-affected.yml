@@ -1,0 +1,192 @@
+name: Rust Affected Crates
+
+# Computes which workspace crates are affected by the changes in this event and
+# emits a `cargo-args` string ("--workspace" or "-p a -p b ...") that downstream
+# rust-* jobs feed into their *-args inputs to scope the build/test to only what
+# changed.
+#
+# Correctness contract: the result is a SUPERSET-safe over-approximation. It
+# walks the intra-workspace reverse-dependency graph, so editing a crate that
+# others depend on (e.g. a `shared` crate) expands to every dependent. Touching
+# the workspace root manifest or Cargo.lock falls back to "--workspace". When in
+# doubt it returns "--workspace" + changed=true rather than risk a false skip.
+
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        description: "Directory containing the Cargo workspace"
+        type: string
+        default: "."
+      toolchain:
+        description: "Rust toolchain used to run `cargo metadata`"
+        type: string
+        default: "stable"
+    outputs:
+      cargo-args:
+        description: '"--workspace" or "-p <crate> ..." for downstream *-args'
+        value: ${{ jobs.affected.outputs.cargo-args }}
+      changed:
+        description: '"true" if any crate is affected (or fallback), else "false"'
+        value: ${{ jobs.affected.outputs.changed }}
+      crates:
+        description: "Space-separated list of affected crate names (empty when --workspace)"
+        value: ${{ jobs.affected.outputs.crates }}
+
+jobs:
+  affected:
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    outputs:
+      cargo-args: ${{ steps.detect.outputs.cargo-args }}
+      changed: ${{ steps.detect.outputs.changed }}
+      crates: ${{ steps.detect.outputs.crates }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
+        with:
+          toolchain: ${{ inputs.toolchain }}
+
+      - name: Detect affected crates
+        id: detect
+        env:
+          WORKDIR: ${{ inputs.working-directory }}
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+
+          emit() {
+            {
+              echo "cargo-args=$1"
+              echo "changed=$2"
+              echo "crates=$3"
+            } >> "$GITHUB_OUTPUT"
+            echo "::notice::affected cargo-args=$1 changed=$2 crates=[$3]"
+          }
+
+          # Push events (typically main) build everything. Downstream jobs may
+          # upload artifacts with a delete-sync (e.g. lambdas-packer), where a
+          # partial build would drop unchanged outputs. The selective-build
+          # savings are intentionally a PR-only optimisation — PRs are most runs.
+          if [[ "$EVENT_NAME" == "push" ]]; then
+            echo "::notice::push event; building everything for upload completeness"
+            emit "--workspace" "true" ""
+            exit 0
+          fi
+
+          # --- Resolve the base commit to diff against -------------------------
+          base=""
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            base="$PR_BASE_SHA"
+          fi
+          # New branch / first push reports an all-zero SHA; treat as unknown.
+          if [[ -z "$base" || "$base" =~ ^0+$ ]] || ! git cat-file -e "$base^{commit}" 2>/dev/null; then
+            echo "::warning::base commit unavailable ($EVENT_NAME); falling back to --workspace"
+            emit "--workspace" "true" ""
+            exit 0
+          fi
+
+          # --- Changed files (repo-relative) ----------------------------------
+          mapfile -t changed < <(git diff --name-only "$base" HEAD)
+          if [[ ${#changed[@]} -eq 0 ]]; then
+            emit "" "false" ""
+            exit 0
+          fi
+
+          # Normalise working-directory to a repo-relative prefix ("" for root).
+          wd="${WORKDIR%/}"
+          if [[ "$wd" == "." ]]; then wd=""; fi
+          prefix=""
+          if [[ -n "$wd" ]]; then prefix="$wd/"; fi
+
+          # Root workspace manifest or lockfile changed => everything rebuilds.
+          for f in "${changed[@]}"; do
+            if [[ "$f" == "${prefix}Cargo.toml" || "$f" == "${prefix}Cargo.lock" ]]; then
+              echo "::notice::workspace manifest/lockfile changed; building everything"
+              emit "--workspace" "true" ""
+              exit 0
+            fi
+          done
+
+          # --- Workspace members + intra-workspace dependency edges -----------
+          meta="$(cd "${wd:-.}" && cargo metadata --format-version 1 --no-deps)"
+
+          # name \t crate-dir-relative-to-repo
+          members="$(echo "$meta" | jq -r --arg pre "$prefix" '
+            .workspace_root as $root
+            | .packages[]
+            | [.name, (.manifest_path | rtrimstr("/Cargo.toml"))] | @tsv')"
+
+          # Map absolute crate dirs to repo-relative dirs.
+          declare -A NAME_BY_DIR=()
+          declare -a MEMBER_NAMES=()
+          repo_root="$(git rev-parse --show-toplevel)"
+          while IFS=$'\t' read -r name absdir; do
+            [[ -z "$name" ]] && continue
+            reldir="${absdir#"$repo_root"/}"
+            NAME_BY_DIR["$reldir"]="$name"
+            MEMBER_NAMES+=("$name")
+          done <<< "$members"
+
+          # rdeps[dep] = space-separated dependents (intra-workspace only).
+          declare -A RDEPS=()
+          while IFS= read -r line; do
+            pkg="$(echo "$line" | jq -r '.name')"
+            for dep in $(echo "$line" | jq -r '.dependencies[].name'); do
+              for m in "${MEMBER_NAMES[@]}"; do
+                if [[ "$dep" == "$m" ]]; then
+                  RDEPS["$dep"]="${RDEPS["$dep"]:-} $pkg"
+                fi
+              done
+            done
+          done < <(echo "$meta" | jq -c '.packages[]')
+
+          # --- Directly-changed crates (by path prefix) ----------------------
+          declare -A AFFECTED=()
+          for f in "${changed[@]}"; do
+            for reldir in "${!NAME_BY_DIR[@]}"; do
+              if [[ "$f" == "$reldir/"* ]]; then
+                AFFECTED["${NAME_BY_DIR[$reldir]}"]=1
+              fi
+            done
+          done
+
+          # --- Transitive closure over reverse deps --------------------------
+          queue=("${!AFFECTED[@]}")
+          while [[ ${#queue[@]} -gt 0 ]]; do
+            cur="${queue[0]}"; queue=("${queue[@]:1}")
+            for dependent in ${RDEPS["$cur"]:-}; do
+              if [[ -z "${AFFECTED[$dependent]:-}" ]]; then
+                AFFECTED["$dependent"]=1
+                queue+=("$dependent")
+              fi
+            done
+          done
+
+          # --- Emit result ----------------------------------------------------
+          if [[ ${#AFFECTED[@]} -eq 0 ]]; then
+            # Changed files exist but none under a crate dir (docs, deny.toml,
+            # CI config). Nothing to compile.
+            emit "" "false" ""
+            exit 0
+          fi
+          if [[ ${#AFFECTED[@]} -eq ${#MEMBER_NAMES[@]} ]]; then
+            emit "--workspace" "true" ""
+            exit 0
+          fi
+          args=""; names=""
+          for name in "${!AFFECTED[@]}"; do
+            args="$args -p $name"
+            names="$names $name"
+          done
+          emit "${args# }" "true" "${names# }"

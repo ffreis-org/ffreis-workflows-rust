@@ -12,13 +12,37 @@ on:
         type: string
         default: "."
       test-args:
-        description: "Extra arguments passed to cargo test"
+        description: "Extra arguments passed to the test runner"
         type: string
         default: "--all-features"
       timeout-minutes:
         description: "Job timeout in minutes"
         type: number
         default: 30
+      nextest:
+        description: >-
+          Use cargo-nextest instead of `cargo test`. Faster and better
+          parallelized; doctests are run separately via `cargo test --doc`
+          (nextest does not run doctests). Opt-in because nextest's post-`--`
+          argument semantics differ from `cargo test`.
+        type: boolean
+        default: false
+      sccache:
+        description: "Enable sccache compiler caching (S3 backend)"
+        type: boolean
+        default: false
+      sccache-bucket:
+        description: "S3 bucket name for the sccache backend"
+        type: string
+        default: ""
+      sccache-region:
+        description: "AWS region of the sccache bucket"
+        type: string
+        default: "us-east-1"
+      sccache-role-arn:
+        description: "IAM role ARN assumed via OIDC for sccache S3 access"
+        type: string
+        default: ""
       run_on_draft:
         description: "Run even on draft PRs (default: skip on draft to save CI minutes)"
         required: false
@@ -32,6 +56,9 @@ jobs:
     timeout-minutes: ${{ inputs.timeout-minutes }}
     permissions:
       contents: read
+      # Only used when `sccache` + `sccache-role-arn` are set, to mint an
+      # OIDC token for the S3 cache backend. No-op otherwise.
+      id-token: write
     defaults:
       run:
         shell: bash
@@ -50,10 +77,60 @@ jobs:
         with:
           workspaces: "${{ inputs.working-directory }} -> target"
 
-      - name: Run tests
+      - name: Configure AWS credentials for sccache
+        if: ${{ inputs.sccache && inputs.sccache-role-arn != '' }}
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
+        with:
+          role-to-assume: ${{ inputs.sccache-role-arn }}
+          aws-region: ${{ inputs.sccache-region }}
+
+      - name: Set up sccache
+        if: ${{ inputs.sccache }}
+        uses: mozilla-actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10
+
+      - name: Enable sccache
+        if: ${{ inputs.sccache }}
+        env:
+          SCCACHE_BUCKET: ${{ inputs.sccache-bucket }}
+          SCCACHE_REGION: ${{ inputs.sccache-region }}
+          SCCACHE_S3_KEY_PREFIX: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          {
+            echo "RUSTC_WRAPPER=sccache"
+            echo "CARGO_INCREMENTAL=0"
+            echo "SCCACHE_BUCKET=${SCCACHE_BUCKET}"
+            echo "SCCACHE_REGION=${SCCACHE_REGION}"
+            echo "SCCACHE_S3_KEY_PREFIX=${SCCACHE_S3_KEY_PREFIX}"
+          } >> "$GITHUB_ENV"
+
+      - name: Install cargo-nextest
+        if: ${{ inputs.nextest }}
+        uses: taiki-e/install-action@25435dc8dd3baed7417e0c96d3fe89013a5b2e09 # v2.81.3
+        with:
+          tool: cargo-nextest
+
+      - name: Run tests (nextest + doctests)
+        if: ${{ inputs.nextest }}
+        env:
+          TEST_ARGS: ${{ inputs.test-args }}
+        run: |
+          set -euo pipefail
+          read -r -a test_args_arr <<< "${TEST_ARGS:-}"
+          cargo nextest run "${test_args_arr[@]}"
+          # nextest does not run doctests; run them separately so coverage of
+          # `///` examples is preserved.
+          cargo test --doc "${test_args_arr[@]}"
+
+      - name: Run tests (cargo test)
+        if: ${{ !inputs.nextest }}
         env:
           TEST_ARGS: ${{ inputs.test-args }}
         run: |
           set -euo pipefail
           read -r -a test_args_arr <<< "${TEST_ARGS:-}"
           cargo test "${test_args_arr[@]}"
+
+      - name: sccache stats
+        if: ${{ inputs.sccache }}
+        run: sccache --show-stats
