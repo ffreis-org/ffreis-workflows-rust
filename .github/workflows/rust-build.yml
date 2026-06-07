@@ -112,7 +112,7 @@ jobs:
         run: |
           set -euo pipefail
           read -r -a build_args_arr <<< "${BUILD_ARGS:-}"
-          cargo build "${build_args_arr[@]}"
+          cargo build --locked "${build_args_arr[@]}"
 
       - name: sccache stats
         if: ${{ inputs.sccache }}
