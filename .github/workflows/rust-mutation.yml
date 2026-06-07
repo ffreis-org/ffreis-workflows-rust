@@ -168,5 +168,5 @@ jobs:
         with:
           name: mutants-report
           path: ${{ inputs.working-directory }}/mutants.out/
-          retention-days: 14
+          retention-days: 7
           if-no-files-found: ignore
