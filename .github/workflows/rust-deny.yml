@@ -43,9 +43,10 @@ jobs:
           toolchain: stable
 
       - name: Install cargo-deny
-        run: |
-          set -euo pipefail
-          cargo install cargo-deny --locked
+        # Prebuilt binary (no from-source compile per run).
+        uses: taiki-e/install-action@25435dc8dd3baed7417e0c96d3fe89013a5b2e09 # v2.81.3
+        with:
+          tool: cargo-deny
 
       - name: Run cargo deny
         env:

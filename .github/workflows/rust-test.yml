@@ -11,6 +11,14 @@ on:
         description: "Directory containing the Cargo workspace"
         type: string
         default: "."
+      cargo-args:
+        description: >-
+          Package-selection args placed BEFORE test-args (e.g. "-p crate-a
+          -p crate-b" or "--workspace"). Used to scope the run to affected
+          crates via rust-affected.yml's cargo-args output. Empty = whatever
+          test-args specifies.
+        type: string
+        default: ""
       test-args:
         description: "Extra arguments passed to the test runner"
         type: string
@@ -113,23 +121,27 @@ jobs:
       - name: Run tests (nextest + doctests)
         if: ${{ inputs.nextest }}
         env:
+          CARGO_ARGS: ${{ inputs.cargo-args }}
           TEST_ARGS: ${{ inputs.test-args }}
         run: |
           set -euo pipefail
+          read -r -a cargo_args_arr <<< "${CARGO_ARGS:-}"
           read -r -a test_args_arr <<< "${TEST_ARGS:-}"
-          cargo nextest run "${test_args_arr[@]}"
+          cargo nextest run "${cargo_args_arr[@]}" "${test_args_arr[@]}"
           # nextest does not run doctests; run them separately so coverage of
           # `///` examples is preserved.
-          cargo test --doc "${test_args_arr[@]}"
+          cargo test --doc "${cargo_args_arr[@]}" "${test_args_arr[@]}"
 
       - name: Run tests (cargo test)
         if: ${{ !inputs.nextest }}
         env:
+          CARGO_ARGS: ${{ inputs.cargo-args }}
           TEST_ARGS: ${{ inputs.test-args }}
         run: |
           set -euo pipefail
+          read -r -a cargo_args_arr <<< "${CARGO_ARGS:-}"
           read -r -a test_args_arr <<< "${TEST_ARGS:-}"
-          cargo test "${test_args_arr[@]}"
+          cargo test "${cargo_args_arr[@]}" "${test_args_arr[@]}"
 
       - name: sccache stats
         if: ${{ inputs.sccache }}

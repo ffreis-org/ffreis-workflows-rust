@@ -19,6 +19,14 @@ on:
         description: "Directory containing the Cargo workspace"
         type: string
         default: "."
+      cargo-args:
+        description: >-
+          Package-selection args placed BEFORE build-args (e.g. "-p crate" or
+          "--workspace"). Used to scope the build to affected crates via
+          rust-affected.yml's cargo-args output. Empty = whatever build-args
+          specifies.
+        type: string
+        default: ""
       build-args:
         description: "Extra arguments passed to cargo build"
         type: string
@@ -108,11 +116,13 @@ jobs:
 
       - name: Build
         env:
+          CARGO_ARGS: ${{ inputs.cargo-args }}
           BUILD_ARGS: ${{ inputs.build-args }}
         run: |
           set -euo pipefail
+          read -r -a cargo_args_arr <<< "${CARGO_ARGS:-}"
           read -r -a build_args_arr <<< "${BUILD_ARGS:-}"
-          cargo build --locked "${build_args_arr[@]}"
+          cargo build --locked "${cargo_args_arr[@]}" "${build_args_arr[@]}"
 
       - name: sccache stats
         if: ${{ inputs.sccache }}
