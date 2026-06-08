@@ -1,0 +1,175 @@
+name: Rust Quick Checks
+
+# Consolidated fast Rust checks. Runs rustfmt, clippy, and cargo-deny as
+# sequential STEPS in ONE job that shares a single checkout, a single toolchain
+# install, and a single Swatinem rust-cache, instead of three separate caller
+# jobs (rust-fmt + rust-lint + rust-deny).
+#
+# GitHub bills every job rounded up to a whole minute and each job pays its own
+# ~30-60s runner + toolchain setup, so collapsing 3 jobs -> 1 removes two extra
+# toolchain installs + cache restores + minute-roundings. The biggest single win
+# is cargo-deny: rust-deny.yml does `cargo install cargo-deny --locked` (a
+# from-source compile) on its OWN runner with no rust-cache; folding it in lets
+# that install reuse this job's cache and toolchain.
+#
+# clippy is itself a full compile, so it (optionally) honours the same sccache
+# S3 backend as rust-lint/rust-build. Heavy/independent jobs (test, coverage,
+# build, mutation, docs) stay separate so they parallelize and fail independently.
+#
+# Each check captures its own exit code via continue-on-error; the final Evaluate
+# step fails the job once and names exactly which check broke. cargo-deny is
+# OPTIONAL (run-deny, default true) because it requires a deny.toml at the
+# working-directory root.
+
+on:
+  workflow_call:
+    inputs:
+      toolchain:
+        description: "Rust toolchain to use"
+        type: string
+        default: "stable"
+      working-directory:
+        description: "Directory containing the Cargo workspace"
+        type: string
+        default: "."
+      clippy-args:
+        description: "Extra arguments passed to cargo clippy"
+        type: string
+        default: "-- -D warnings"
+      run-deny:
+        description: "Run cargo-deny (requires deny.toml at the working-directory root)"
+        type: boolean
+        default: true
+      deny-checks:
+        description: "Space-separated list of cargo-deny checks to run"
+        type: string
+        default: "advisories bans licenses sources"
+      sccache:
+        description: "Enable sccache compiler caching (S3 backend) for the clippy compile"
+        type: boolean
+        default: false
+      sccache-bucket:
+        description: "S3 bucket name for the sccache backend"
+        type: string
+        default: ""
+      sccache-region:
+        description: "AWS region of the sccache bucket"
+        type: string
+        default: "us-east-1"
+      sccache-role-arn:
+        description: "IAM role ARN assumed via OIDC for sccache S3 access"
+        type: string
+        default: ""
+      run_on_draft:
+        description: "Run even on draft PRs (default: skip on draft to save CI minutes)"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  quick-checks:
+    if: ${{ inputs.run_on_draft || vars.CI_RUN_ON_DRAFT == 'true' || github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    name: Quick checks (fmt + clippy + deny)
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      # Only used when `sccache` + `sccache-role-arn` are set, to mint an
+      # OIDC token for the S3 cache backend. No-op otherwise.
+      id-token: write
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
+        with:
+          toolchain: ${{ inputs.toolchain }}
+          components: rustfmt, clippy
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@23869a5bd66c73db3c0ac40331f3206eb23791dc # v2.9.1
+        with:
+          workspaces: "${{ inputs.working-directory }} -> target"
+
+      - name: Configure AWS credentials for sccache
+        if: ${{ inputs.sccache && inputs.sccache-role-arn != '' }}
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
+        with:
+          role-to-assume: ${{ inputs.sccache-role-arn }}
+          aws-region: ${{ inputs.sccache-region }}
+
+      - name: Set up sccache
+        if: ${{ inputs.sccache }}
+        uses: mozilla-actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10
+
+      - name: Enable sccache
+        if: ${{ inputs.sccache }}
+        env:
+          SCCACHE_BUCKET: ${{ inputs.sccache-bucket }}
+          SCCACHE_REGION: ${{ inputs.sccache-region }}
+          SCCACHE_S3_KEY_PREFIX: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          {
+            echo "RUSTC_WRAPPER=sccache"
+            echo "CARGO_INCREMENTAL=0"
+            echo "SCCACHE_BUCKET=${SCCACHE_BUCKET}"
+            echo "SCCACHE_REGION=${SCCACHE_REGION}"
+            echo "SCCACHE_S3_KEY_PREFIX=${SCCACHE_S3_KEY_PREFIX}"
+          } >> "$GITHUB_ENV"
+
+      # --- rustfmt -----------------------------------------------------------
+      - name: Check formatting (rustfmt)
+        id: fmt
+        continue-on-error: true
+        run: cargo fmt --all -- --check
+
+      # --- clippy ------------------------------------------------------------
+      - name: Run Clippy
+        id: clippy
+        continue-on-error: true
+        env:
+          CLIPPY_ARGS: ${{ inputs.clippy-args }}
+        run: |
+          set -euo pipefail
+          read -r -a clippy_args_arr <<< "${CLIPPY_ARGS:-}"
+          cargo clippy --all-targets --all-features "${clippy_args_arr[@]}"
+
+      # --- cargo-deny (optional) ---------------------------------------------
+      - name: Run cargo-deny
+        id: deny
+        if: ${{ inputs.run-deny }}
+        continue-on-error: true
+        env:
+          DENY_CHECKS: ${{ inputs.deny-checks }}
+        run: |
+          set -euo pipefail
+          cargo install cargo-deny --locked
+          read -r -a deny_checks_arr <<< "${DENY_CHECKS:-}"
+          cargo deny check "${deny_checks_arr[@]}"
+
+      - name: sccache stats
+        if: ${{ inputs.sccache }}
+        run: sccache --show-stats
+
+      # --- Aggregate verdict (single fail point) -----------------------------
+      - name: Evaluate check results
+        env:
+          FMT_OUTCOME: ${{ steps.fmt.outcome }}
+          CLIPPY_OUTCOME: ${{ steps.clippy.outcome }}
+          DENY_OUTCOME: ${{ steps.deny.outcome }}
+        run: |
+          set -euo pipefail
+          fail=0
+          [[ "$FMT_OUTCOME"    != "success" ]] && { echo "::error::rustfmt check failed (run 'cargo fmt --all')."; fail=1; }
+          [[ "$CLIPPY_OUTCOME" != "success" ]] && { echo "::error::clippy failed."; fail=1; }
+          # deny is optional: 'skipped' (run-deny=false) is a pass; only a real failure fails.
+          if [[ "$DENY_OUTCOME" != "success" && "$DENY_OUTCOME" != "skipped" && "$DENY_OUTCOME" != "" ]]; then
+            echo "::error::cargo-deny failed."
+            fail=1
+          fi
+          exit "$fail"

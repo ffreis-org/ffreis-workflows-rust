@@ -65,4 +65,4 @@ jobs:
           name: criterion-results
           path: ${{ inputs.working-directory }}/target/criterion
           if-no-files-found: warn
-          retention-days: 30
+          retention-days: 14
