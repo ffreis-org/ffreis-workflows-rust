@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.0](https://github.com/FelipeFuhr/ffreis-workflows-rust/compare/v1.1.0...v1.2.0) (2026-06-15)
+
+
+### Features
+
+* opt-in sccache, nextest, and affected-crate detection ([#33](https://github.com/FelipeFuhr/ffreis-workflows-rust/issues/33)) ([7d1a437](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/7d1a437aa234bc743864aa655d93190e35b48d09))
+
+
+### Bug Fixes
+
+* **grype:** bump workflows-general SHA to prevent self-scan CVEs ([#37](https://github.com/FelipeFuhr/ffreis-workflows-rust/issues/37)) ([d783976](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/d783976ad20b5b358e656540dff7e642a179e661))
+* resolve SonarQube issues ([#40](https://github.com/FelipeFuhr/ffreis-workflows-rust/issues/40)) ([aa543c5](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/aa543c5223c43d3dd55ef26cb7e337bcfe53fd1a))
+
 ## [1.1.0](https://github.com/FelipeFuhr/ffreis-workflows-rust/compare/v1.0.0...v1.1.0) (2026-05-24)
 
 
