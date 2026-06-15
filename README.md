@@ -1,5 +1,9 @@
 # ffreis-platform-workflows-rust
 
+<!-- ffreis-badges:start -->
+[![CI](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/FelipeFuhr/ffreis-badges/main/badges/ffreis-workflows-rust/ci.json)](https://github.com/FelipeFuhr/ffreis-workflows-rust/actions) [![Latest version](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/FelipeFuhr/ffreis-badges/main/badges/ffreis-workflows-rust/version.json)](https://github.com/FelipeFuhr/ffreis-workflows-rust/releases) [![License](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/FelipeFuhr/ffreis-badges/main/badges/ffreis-workflows-rust/license.json)](https://github.com/FelipeFuhr/ffreis-workflows-rust/blob/main/LICENSE)
+<!-- ffreis-badges:end -->
+
 Reusable GitHub Actions workflows for Rust projects in the ffreis org.
 
 
