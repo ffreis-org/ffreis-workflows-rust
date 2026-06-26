@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/FelipeFuhr/ffreis-workflows-rust/compare/v1.2.0...v1.2.1) (2026-06-26)
+
+
+### Bug Fixes
+
+* **ci:** pin ffreis-workflows-general to v1.7.0 ([#52](https://github.com/FelipeFuhr/ffreis-workflows-rust/issues/52)) ([856a88e](https://github.com/FelipeFuhr/ffreis-workflows-rust/commit/856a88e6467835aeff011f2868059193e0107b74))
+
 ## [1.2.0](https://github.com/FelipeFuhr/ffreis-workflows-rust/compare/v1.1.0...v1.2.0) (2026-06-15)
 
 
