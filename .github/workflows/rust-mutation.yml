@@ -81,6 +81,10 @@ jobs:
           set -euo pipefail
           if [[ -n "$PRIVATE_DEPS_TOKEN" ]]; then
             git config --global url."https://x-access-token:${PRIVATE_DEPS_TOKEN}@github.com/".insteadOf "https://github.com/"
+            # cargo's libgit2 backend does not reliably honor url.insteadOf
+            # credential rewriting; force it to shell out to system git,
+            # which does.
+            echo "CARGO_NET_GIT_FETCH_WITH_CLI=true" >> "$GITHUB_ENV"
           fi
 
       - name: Install Rust (${{ inputs.toolchain }})
