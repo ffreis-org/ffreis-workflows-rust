@@ -53,7 +53,7 @@ on:
         description: 'Achieved mutation score (integer, 0–100)'
         value: ${{ jobs.mutation.outputs.score }}
     secrets:
-      private-deps-token:
+      PRIVATE_DEPS_TOKEN:
         description: "Token with read access to private git-dependency repos (e.g. FLEET_READ_TOKEN). Optional — omit if the workspace has no private cargo git deps."
         required: false
 
@@ -76,7 +76,7 @@ jobs:
 
       - name: Configure git for private cargo dependencies
         env:
-          PRIVATE_DEPS_TOKEN: ${{ secrets.private-deps-token }}
+          PRIVATE_DEPS_TOKEN: ${{ secrets.PRIVATE_DEPS_TOKEN }}
         run: |
           set -euo pipefail
           if [[ -n "$PRIVATE_DEPS_TOKEN" ]]; then
