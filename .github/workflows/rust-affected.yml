@@ -22,6 +22,18 @@ on:
         description: "Rust toolchain used to run `cargo metadata`"
         type: string
         default: "stable"
+      push-builds-workspace:
+        description: >-
+          On push events, force "--workspace" (default true) so downstream
+          delete-sync artifact uploads never drop unchanged outputs. Set false
+          to keep push affected-only (diffs against github.event.before) — e.g.
+          on a memory-constrained self-hosted runner where a whole-workspace
+          build cannot fit. CONTRACT when false: the caller's artifact upload
+          MUST be additive (no blanket `--delete`, or `--delete` reconciled
+          against a manifest of all current crates) or it will drop the
+          unchanged lambda artifacts this scoping deliberately did not rebuild.
+        type: boolean
+        default: true
     outputs:
       cargo-args:
         description: '"--workspace" or "-p <crate> ..." for downstream *-args'
@@ -62,6 +74,8 @@ jobs:
           WORKDIR: ${{ inputs.working-directory }}
           EVENT_NAME: ${{ github.event_name }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+          PUSH_BUILDS_WORKSPACE: ${{ inputs.push-builds-workspace }}
         run: |
           set -euo pipefail
 
@@ -74,11 +88,14 @@ jobs:
             echo "::notice::affected cargo-args=$1 changed=$2 crates=[$3]"
           }
 
-          # Push events (typically main) build everything. Downstream jobs may
-          # upload artifacts with a delete-sync (e.g. lambdas-packer), where a
-          # partial build would drop unchanged outputs. The selective-build
-          # savings are intentionally a PR-only optimisation — PRs are most runs.
-          if [[ "$EVENT_NAME" == "push" ]]; then
+          # Push events (typically main) build everything BY DEFAULT: downstream
+          # jobs may upload artifacts with a delete-sync (e.g. lambdas-packer),
+          # where a partial build would drop unchanged outputs. Callers on a
+          # memory-constrained self-hosted runner (where --workspace can't fit)
+          # opt out with push-builds-workspace=false — see that input's CONTRACT
+          # (the upload must be additive). When false, push falls through to the
+          # same diff logic PRs use, diffing against github.event.before.
+          if [[ "$EVENT_NAME" == "push" && "$PUSH_BUILDS_WORKSPACE" == "true" ]]; then
             echo "::notice::push event; building everything for upload completeness"
             emit "--workspace" "true" ""
             exit 0
@@ -88,6 +105,11 @@ jobs:
           base=""
           if [[ "$EVENT_NAME" == "pull_request" ]]; then
             base="$PR_BASE_SHA"
+          elif [[ "$EVENT_NAME" == "push" ]]; then
+            # Affected-only push (push-builds-workspace=false): diff against the
+            # commit the ref pointed at before this push. An all-zero SHA (new
+            # branch / first push) hits the guard below and falls back safely.
+            base="$PUSH_BEFORE_SHA"
           fi
           # New branch / first push reports an all-zero SHA; treat as unknown.
           if [[ -z "$base" || "$base" =~ ^0+$ ]] || ! git cat-file -e "$base^{commit}" 2>/dev/null; then

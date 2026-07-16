@@ -31,6 +31,16 @@ on:
         description: "Extra arguments passed to cargo build"
         type: string
         default: "--release"
+      build-wrapper:
+        description: >-
+          Optional command prefix wrapping the `cargo build` invocation, e.g.
+          "buildguard run --profile rust --no-slot --" to confine the build in
+          a memory-limited cgroup on a memory-constrained self-hosted runner.
+          Empty (default) runs cargo directly, so GitHub-hosted callers are
+          unaffected. The wrapper binary must already exist on the runner. See
+          ffreis-home-infra ansible/roles/gha_runner/README.md "buildguard".
+        type: string
+        default: ""
       sccache:
         description: "Enable sccache compiler caching (S3 backend)"
         type: boolean
@@ -135,11 +145,20 @@ jobs:
         env:
           CARGO_ARGS: ${{ inputs.cargo-args }}
           BUILD_ARGS: ${{ inputs.build-args }}
+          BUILD_WRAPPER: ${{ inputs.build-wrapper }}
         run: |
           set -euo pipefail
           read -r -a cargo_args_arr <<< "${CARGO_ARGS:-}"
           read -r -a build_args_arr <<< "${BUILD_ARGS:-}"
-          cargo build --locked "${cargo_args_arr[@]}" "${build_args_arr[@]}"
+          read -r -a wrapper_arr <<< "${BUILD_WRAPPER:-}"
+          # A build-wrapper (e.g. buildguard) confines the compile in a
+          # memory-limited cgroup on a constrained self-hosted runner; empty
+          # by default so GitHub-hosted builds run cargo directly.
+          if [[ ${#wrapper_arr[@]} -gt 0 ]]; then
+            "${wrapper_arr[@]}" cargo build --locked "${cargo_args_arr[@]}" "${build_args_arr[@]}"
+          else
+            cargo build --locked "${cargo_args_arr[@]}" "${build_args_arr[@]}"
+          fi
 
       - name: sccache stats
         if: ${{ inputs.sccache }}
