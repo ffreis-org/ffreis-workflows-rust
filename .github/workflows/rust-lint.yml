@@ -36,6 +36,13 @@ on:
         required: false
         type: boolean
         default: false
+      runner:
+        description: |
+          JSON-encoded runner label(s). Default: GitHub-hosted ubuntu-latest.
+          Self-hosted homelab box (private repos only): '["self-hosted","local"]'
+        required: false
+        type: string
+        default: '["ubuntu-latest"]'
     secrets:
       PRIVATE_DEPS_TOKEN:
         description: "Token with read access to private git-dependency repos (e.g. FLEET_READ_TOKEN). Optional — omit if the workspace has no private cargo git deps."
@@ -50,7 +57,7 @@ jobs:
       # Only used when `sccache` + `sccache-role-arn` are set, to mint an
       # OIDC token for the S3 cache backend. No-op otherwise.
       id-token: write
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJson(inputs.runner) }}
     defaults:
       run:
         shell: bash
