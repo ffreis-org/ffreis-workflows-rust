@@ -20,6 +20,13 @@ on:
         required: false
         type: boolean
         default: false
+      runner:
+        description: |
+          JSON-encoded runner label(s). Default: GitHub-hosted ubuntu-latest.
+          Self-hosted homelab box (private repos only): '["self-hosted","local"]'
+        required: false
+        type: string
+        default: '["ubuntu-latest"]'
 
 jobs:
   audit:
@@ -27,7 +34,7 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJson(inputs.runner) }}
     defaults:
       run:
         shell: bash
