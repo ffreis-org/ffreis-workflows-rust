@@ -62,6 +62,15 @@ on:
         required: false
         type: boolean
         default: false
+      cargo-build-jobs:
+        description: >-
+          Caps CARGO_BUILD_JOBS (parallel rustc compile units). Default "4"
+          matches the workspace Makefile convention — memory-safe on a
+          4.5Gi-limited self-hosted runner pod. Hosted-runner callers wanting
+          full parallelism can pass a higher value (e.g. the runner's core
+          count).
+        type: string
+        default: "4"
     secrets:
       PRIVATE_DEPS_TOKEN:
         description: "Token with read access to private git-dependency repos (e.g. FLEET_READ_TOKEN). Optional — omit if the workspace has no private cargo git deps."
@@ -87,6 +96,8 @@ jobs:
       run:
         shell: bash
         working-directory: ${{ inputs.working-directory }}
+    env:
+      CARGO_BUILD_JOBS: ${{ inputs.cargo-build-jobs }}
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -151,13 +162,19 @@ jobs:
           read -r -a cargo_args_arr <<< "${CARGO_ARGS:-}"
           read -r -a build_args_arr <<< "${BUILD_ARGS:-}"
           read -r -a wrapper_arr <<< "${BUILD_WRAPPER:-}"
+          # Library crates in this fleet gitignore Cargo.lock (only
+          # binaries/Lambdas commit it); only pass --locked when one exists so
+          # library repos don't fail resolving a lockfile that was never
+          # committed.
+          locked_arr=()
+          [ -f Cargo.lock ] && locked_arr=("--locked")
           # A build-wrapper (e.g. buildguard) confines the compile in a
           # memory-limited cgroup on a constrained self-hosted runner; empty
           # by default so GitHub-hosted builds run cargo directly.
           if [[ ${#wrapper_arr[@]} -gt 0 ]]; then
-            "${wrapper_arr[@]}" cargo build --locked "${cargo_args_arr[@]}" "${build_args_arr[@]}"
+            "${wrapper_arr[@]}" cargo build "${locked_arr[@]}" "${cargo_args_arr[@]}" "${build_args_arr[@]}"
           else
-            cargo build --locked "${cargo_args_arr[@]}" "${build_args_arr[@]}"
+            cargo build "${locked_arr[@]}" "${cargo_args_arr[@]}" "${build_args_arr[@]}"
           fi
 
       - name: sccache stats

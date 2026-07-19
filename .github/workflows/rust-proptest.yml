@@ -46,6 +46,15 @@ on:
         required: false
         type: string
         default: '["ubuntu-latest"]'
+      cargo-build-jobs:
+        description: >-
+          Caps CARGO_BUILD_JOBS (parallel rustc compile units). Default "4"
+          matches the workspace Makefile convention — memory-safe on a
+          4.5Gi-limited self-hosted runner pod. Hosted-runner callers wanting
+          full parallelism can pass a higher value (e.g. the runner's core
+          count).
+        type: string
+        default: "4"
     secrets:
       PRIVATE_DEPS_TOKEN:
         description: "Token with read access to private git-dependency repos (e.g. FLEET_READ_TOKEN). Optional — omit if the workspace has no private cargo git deps."
@@ -67,6 +76,7 @@ jobs:
       # misses edge inputs that only show with the long tail.
       PROPTEST_CASES: ${{ inputs.proptest-cases }}
       PROPTEST_MAX_SHRINK_ITERS: ${{ inputs.proptest-max-shrink-iters }}
+      CARGO_BUILD_JOBS: ${{ inputs.cargo-build-jobs }}
 
     steps:
       - name: Harden the runner (Audit all outbound calls)

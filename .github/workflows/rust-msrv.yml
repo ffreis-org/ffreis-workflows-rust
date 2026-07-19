@@ -27,6 +27,15 @@ on:
         required: false
         type: string
         default: '["ubuntu-latest"]'
+      cargo-build-jobs:
+        description: >-
+          Caps CARGO_BUILD_JOBS (parallel rustc compile units). Default "4"
+          matches the workspace Makefile convention — memory-safe on a
+          4.5Gi-limited self-hosted runner pod. Hosted-runner callers wanting
+          full parallelism can pass a higher value (e.g. the runner's core
+          count).
+        type: string
+        default: "4"
     secrets:
       PRIVATE_DEPS_TOKEN:
         description: "Token with read access to private git-dependency repos (e.g. FLEET_READ_TOKEN). Optional — omit if the workspace has no private cargo git deps."
@@ -43,6 +52,8 @@ jobs:
       run:
         shell: bash
         working-directory: ${{ inputs.working-directory }}
+    env:
+      CARGO_BUILD_JOBS: ${{ inputs.cargo-build-jobs }}
 
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -76,7 +87,13 @@ jobs:
         run: |
           set -euo pipefail
           read -r -a build_args_arr <<< "${BUILD_ARGS:-}"
-          cargo build --locked "${build_args_arr[@]}"
+          # Library crates in this fleet gitignore Cargo.lock (only
+          # binaries/Lambdas commit it); only pass --locked when one exists so
+          # library repos don't fail resolving a lockfile that was never
+          # committed.
+          locked_arr=()
+          [ -f Cargo.lock ] && locked_arr=("--locked")
+          cargo build "${locked_arr[@]}" "${build_args_arr[@]}"
 
       - name: Test compile check (MSRV)
         run: |
