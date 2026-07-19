@@ -42,6 +42,24 @@ container build, cargo-deny, docs, MSRV check, benchmarks, and Miri.
 
 4. **MSRV input is required** — always a concrete version (e.g., `1.80.0`), not `stable`.
 
+4a. **Private cross-repo cargo git dependencies (`PRIVATE_DEPS_TOKEN` secret).**
+   Every workflow that resolves the Cargo dependency graph accepts an optional
+   `PRIVATE_DEPS_TOKEN` workflow_call secret (originally added to
+   `rust-coverage.yml`, `rust-deny.yml`, `rust-docs.yml`, `rust-lint.yml`,
+   `rust-mutation.yml`, `rust-test.yml`, `rust-build.yml` in #54/#56/#57; later
+   extended to `rust-bench.yml`, `rust-miri.yml`, `rust-msrv.yml`,
+   `rust-proptest.yml`, `rust-quick-checks.yml`, `rust-security.yml`). When set,
+   a "Configure git for private cargo dependencies" step (right after checkout)
+   runs `git config --global url."https://x-access-token:${TOKEN}@github.com/".insteadOf
+   "https://github.com/"` and sets `CARGO_NET_GIT_FETCH_WITH_CLI=true` — required
+   because cargo's libgit2 backend does not reliably honor `url.insteadOf`
+   rewriting (confirmed empirically, see #56). Secret name is
+   SCREAMING_SNAKE_CASE (not `private-deps-token`) because workflow_call secret
+   IDs must be valid identifiers — a hyphenated name causes a silent
+   `startup_failure` (zero jobs created). `rust-fmt.yml` is intentionally NOT
+   wired: `cargo fmt` never resolves the dependency graph, so it has nothing to
+   authenticate.
+
 5. **Coverage threshold** (`coverage-threshold`, default 80) is per-workflow input.
    Callers override per their own standard.
 
