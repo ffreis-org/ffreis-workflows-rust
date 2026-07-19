@@ -51,6 +51,15 @@ on:
         required: false
         type: string
         default: '["ubuntu-latest"]'
+      cargo-build-jobs:
+        description: >-
+          Caps CARGO_BUILD_JOBS (parallel rustc compile units). Default "4"
+          matches the workspace Makefile convention — memory-safe on a
+          4.5Gi-limited self-hosted runner pod. Hosted-runner callers wanting
+          full parallelism can pass a higher value (e.g. the runner's core
+          count).
+        type: string
+        default: "4"
     secrets:
       CODECOV_TOKEN:
         required: false
@@ -72,6 +81,8 @@ jobs:
       run:
         shell: bash
         working-directory: ${{ inputs.working-directory }}
+    env:
+      CARGO_BUILD_JOBS: ${{ inputs.cargo-build-jobs }}
 
     steps:
       - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v4

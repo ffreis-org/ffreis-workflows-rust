@@ -70,6 +70,33 @@ container build, cargo-deny, docs, MSRV check, benchmarks, and Miri.
 8. **Container build in `self-test.yml`:** pass `push: false` or omit registry inputs —
    no registry credentials required in this repo.
 
+9. **`cargo-build-jobs` input (default `"4"`) caps `CARGO_BUILD_JOBS`** on every
+   reusable workflow that compiles Rust source: `rust-build.yml`, `rust-test.yml`,
+   `rust-docs.yml`, `rust-mutation.yml`, `rust-coverage.yml`, `rust-bench.yml`,
+   `rust-miri.yml`, `rust-proptest.yml`, `rust-msrv.yml`, `rust-lint.yml` (clippy
+   is a full compile), `rust-quick-checks.yml` (its clippy step), and
+   `rust-sonar.yml` (its llvm-cov build). Set as a job-level `env:` so it applies
+   to every step. Prevents rustc's default full-core parallelism from
+   OOM-SIGKILLing a job on the memory-constrained self-hosted runner pod (4.5Gi
+   cgroup limit) when compiling a heavy dependency graph (e.g. `aws-sdk-*`
+   crates). Default "4" matches the workspace Makefile convention; GitHub-hosted
+   callers wanting full parallelism pass a higher value. `rust-fmt.yml`,
+   `rust-deny.yml`, `rust-affected.yml`, and `rust-security.yml` are
+   intentionally NOT wired — none of them compile the caller's workspace
+   (`cargo fmt`/`cargo deny check`/`cargo metadata`/`cargo audit` all work off
+   the manifest or lockfile, not a full build).
+
+10. **`--locked` is conditional on `Cargo.lock` existing**, only in
+    `rust-build.yml` and `rust-msrv.yml` — the only two reusable workflows that
+    hardcode `--locked` against the *caller's own* workspace build. Every other
+    `--locked` in this repo (`rust-quick-checks.yml`, `rust-sonar.yml`,
+    `rust-mutation.yml`, `rust-security.yml`) is a `cargo install <tool>
+    --locked` pinning the installed TOOL's own bundled lockfile, not the
+    caller's — leave those hardcoded. Library crates in the fleet gitignore
+    `Cargo.lock` (only binaries/Lambdas commit it), so an unconditional
+    `--locked` broke every library caller. Do not hardcode `--locked`
+    unconditionally again; detect with `[ -f Cargo.lock ] && locked_arr=("--locked")`.
+
 ## Structure
 
 ```
