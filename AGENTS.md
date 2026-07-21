@@ -77,8 +77,8 @@ container build, cargo-deny, docs, MSRV check, benchmarks, and Miri.
    is a full compile), `rust-quick-checks.yml` (its clippy step), and
    `rust-sonar.yml` (its llvm-cov build). Set as a job-level `env:` so it applies
    to every step. Prevents rustc's default full-core parallelism from
-   OOM-SIGKILLing a job on the memory-constrained self-hosted runner pod (4.5Gi
-   cgroup limit) when compiling a heavy dependency graph (e.g. `aws-sdk-*`
+   OOM-SIGKILLing a job on the memory-constrained runner
+   when compiling a heavy dependency graph (e.g. `aws-sdk-*`
    crates). Default "4" matches the workspace Makefile convention; GitHub-hosted
    callers wanting full parallelism pass a higher value. `rust-fmt.yml`,
    `rust-deny.yml`, `rust-affected.yml`, and `rust-security.yml` are
