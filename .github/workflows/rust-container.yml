@@ -27,7 +27,6 @@ on:
       runner:
         description: |
           JSON-encoded runner label(s). Default: GitHub-hosted ubuntu-latest.
-          Self-hosted homelab box (private repos only): '["self-hosted","local"]'
         required: false
         type: string
         default: '["ubuntu-latest"]'
@@ -38,7 +37,6 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
-    # NOTE: the homelab self-hosted runner has neither docker nor podman
     # installed yet, so routing this job there via `runner:` is not usable
     # until a container runtime is provisioned (separate, deliberately
     # deferred decision). Default stays GitHub-hosted ubuntu-latest.
